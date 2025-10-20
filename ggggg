@@ -1,0 +1,70 @@
+import hashlib
+import os
+import sys
+from pathlib import Path
+
+BLACKLIST_FILE = "user_provided_blacklist.txt"
+LOG_FILE = "scan_results.log"
+
+def sha256_of_file(path, chunk_size=8192):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(chunk_size), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+def load_blacklist(path):
+    if not os.path.exists(path):
+        return set()
+    with open(path, "r", encoding="utf-8") as f:
+        return {line.strip().lower() for line in f if line.strip() and not line.startswith("#")}
+
+def scan_directory(root, blacklist):
+    findings = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        for name in filenames:
+            full = os.path.join(dirpath, name)
+            try:
+                h = sha256_of_file(full)
+            except (PermissionError, OSError) as e:
+                print(f"Не удалось прочитать {full}: {e}")
+                continue
+            if h.lower() in blacklist:
+                findings.append((full, h))
+    return findings
+
+def write_log(findings, logfile):
+    with open(logfile, "a", encoding="utf-8") as f:
+        from datetime import datetime
+        f.write(f"--- Scan at {datetime.utcnow().isoformat()}Z ---\n")
+        if not findings:
+            f.write("No matches found.\n\n")
+        else:
+            for path, h in findings:
+                f.write(f"MATCH: {path}  {h}\n")
+            f.write("\n")
+
+def main():
+    if len(sys.argv) < 2:
+        print("Использование: python3 scanner.py <папка_для_сканирования>")
+        sys.exit(1)
+
+    target = sys.argv[1]
+    if not os.path.isdir(target):
+        print("Ошибка: указанный путь не является директорией.")
+        sys.exit(1)
+
+    blacklist = load_blacklist(BLACKLIST_FILE)
+    print(f"Загружено {len(blacklist)} хешей в чёрный список.")
+    findings = scan_directory(target, blacklist)
+    if findings:
+        print(f"Найдены совпадения: {len(findings)}")
+        for p, h in findings:
+            print(f" - {p}  {h}")
+    else:
+        print("Совпадений не найдено.")
+    write_log(findings, LOG_FILE)
+    print(f"Лог записан в {LOG_FILE}")
+
+if name == "main":
+    main()
