@@ -1,0 +1,69 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Кликни и получи монеты 💰</title>
+<style>
+  body {
+    background: radial-gradient(circle at center, #333, #000);
+    color: gold;
+    font-family: sans-serif;
+    text-align: center;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    user-select: none;
+  }
+  #coin-place {
+    width: 200px;
+    height: 200px;
+    margin: 0 auto;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #FFD700, #B8860B);
+    box-shadow: 0 0 30px gold;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  #coin-place:active {
+    transform: scale(0.9);
+    box-shadow: 0 0 50px orange;
+  }
+  #score {
+    font-size: 32px;
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+
+<h1>💎 Кликни на монету 💎</h1>
+<div id="coin-place"></div>
+<div id="score">Монет: 0</div>
+
+<script>
+let coins = 0;
+
+const place = document.getElementById('coin-place');
+const scoreEl = document.getElementById('score');
+
+// звук (можно отключить)
+const sound = new Audio('https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg');
+
+place.addEventListener('click', () => {
+  coins += 1; // добавляем монету
+  scoreEl.textContent = 'Монет: ' + coins;
+
+  // анимация вспышки
+  place.style.boxShadow = '0 0 50px yellow';
+  setTimeout(() => place.style.boxShadow = '0 0 30px gold', 100);
+
+  // звук
+  sound.currentTime = 0;
+  sound.play().catch(()=>{});
+});
+</script>
+
+</body>
+</html>
